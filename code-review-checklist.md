@@ -20,18 +20,13 @@ Review ALL source files (in main not test) in the project and identify defects u
 
 ## Defect Log
 
-| Defect ID | File | Line(s) | Category | Description | Severity |
-|-----------|------|---------|----------|-------------|----------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
-| 6 | | | | | |
-| 7 | | | | | |
-| 8 | | | | | |
-| 9 | | | | | |
-| 10 | | | | | |
+| 1 | Checkout.java | 76-77 | CS | Hard-coded fine threshold 10.0 should use a named constant instead of a magic number | Medium |
+| 2 | Checkout.java | 94-115 | CG | checkoutBook JavaDoc is excessively long, mixes specification with algorithm steps reducing readability | Low |
+| 3 | Checkout.java | 258-263 | FD | Validation order may cause return behavior compared to specification, handling null values | Medium |
+| 4 | Patron.java | 205 | CS | Single-line if statement without braces reduces readability and can cause maintenance errors | Low |
+| 5 | Book.java | 124-138 | CG | equals/hashCode implementation verbose and could be simplified using Objects helper methods | Low |
+
+
 
 **Severity Levels:**
 - **Critical**: Causes system failure, data corruption, or security issues
