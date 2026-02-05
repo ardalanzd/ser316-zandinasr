@@ -110,6 +110,8 @@ public class Checkout {
         LocalDate newDueDate = today.plusDays(patron.getLoanPeriodDays());
         String isbn = book.getIsbn();
 
+        int overdueBefore = patron.getOverdueCount();
+
         // 4) Renewal path: patron already has this book checked out
         // Renewal updates due date only; does NOT reduce available copies; returns 0.1 immediately.
         if (patron.hasBookCheckedOut(isbn)) {
@@ -169,12 +171,11 @@ public class Checkout {
         // - 1.0 if patron has 1-2 overdue books (higher priority than 1.1)
         // - 1.1 if patron is within 2 of max checkout limit AFTER this checkout
         // - else 0.0
-        int overdue = patron.getOverdueCount();
-        if (overdue >= 1 && overdue <= 2) {
+        if (overdueBefore >= 1 && overdueBefore <= 2) {
             return 1.0;
         }
 
-        int afterCount = currentCount + 1;
+int afterCount = currentCount + 1;
         if (afterCount >= (maxLimit - 2)) {
             return 1.1;
         }
