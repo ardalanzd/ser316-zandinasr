@@ -88,11 +88,65 @@ public class Checkout {
      */
     public double checkoutBook(Book book, Patron patron) {
 
-        // 1) Patron eligibility (must be first; returns 3.1, 3.0, 4.0, 4.1)
-        double patronStatus = validatePatronEligibility(patron);
-        if (patronStatus != 0.0) {
-            return patronStatus;
+        // 1) Patron eligibility (priority order handled by helper)
+        double patronCheck = validatePatronEligibility(patron);
+        if (patronCheck != 0.0) {
+            return patronCheck;
         }
+
+        // 2) Book null
+        if (book == null) {
+            return 2.1;
+        }
+
+        // 3) Reference-only
+        if (book.getType() == Book.BookType.REFERENCE) {
+            return 5.0;
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate dueDate = today.plusDays(patron.getLoanPeriodDays());
+        String isbn = book.getIsbn();
+
+        // 4) Renewal: patron already has this book checked out
+        if (patron.hasBookCheckedOut(isbn)) {
+            patron.addCheckedOutBook(isbn, dueDate);
+
+            // history is internal (not tested), but keep it consistent
+            history.add(new Transaction(patron, book, today, dueDate));
+
+            return 0.1;
+        }
+
+        // 5.1) Availability
+        if (!book.isAvailable()) {
+            return 2.0;
+        }
+
+        // 5.2) Max checkout limit
+        if (patron.getCheckoutCount() >= patron.getMaxCheckoutLimit()) {
+            return 3.2;
+        }
+
+        // 5.3) Process checkout
+        patron.addCheckedOutBook(isbn, dueDate);
+        book.checkout();
+        history.add(new Transaction(patron, book, today, dueDate));
+
+        // Determine success code (priority: 1.0 then 1.1 else 0.0)
+        int overdue = patron.getOverdueCount();
+        if (overdue >= 1 && overdue <= 2) {
+            return 1.0;
+        }
+
+        int afterCount = patron.getCheckoutCount(); // after adding
+        int maxLimit = patron.getMaxCheckoutLimit();
+        if (maxLimit - afterCount <= 2) {
+            return 1.1;
+        }
+
+        return 0.0;
+    }
 
         // 2) Book null
         if (book == null) {
