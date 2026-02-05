@@ -32,12 +32,7 @@ public class CheckoutBlackBoxSample {
      */
     @SuppressWarnings("unchecked")
     static Stream<Class<? extends Checkout>> checkoutClassProvider() {
-        return (Stream<Class<? extends Checkout>>) Stream.of(
-                Checkout0.class,
-                Checkout1.class,
-                Checkout2.class,
-                Checkout3.class
-        );
+        return Stream.<Class<? extends Checkout>>of(Checkout.class);
     }
 
     // Uncomment when you implement the method in assign 3 and comment the above
