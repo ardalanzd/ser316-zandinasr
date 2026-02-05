@@ -88,6 +88,16 @@ public class Checkout {
      */
     public double checkoutBook(Book book, Patron patron) {
 
+        int overdueSnapshot = 0;
+        if (patron != null) {
+            LocalDate _today = LocalDate.now();
+            for (LocalDate d : patron.getCheckedOutBooks().values()) {
+                if (d != null && d.isBefore(_today)) {
+                    overdueSnapshot++;
+                }
+            }
+        }
+
         // 1) Patron eligibility (priority order handled by helper)
         double patronCheck = validatePatronEligibility(patron);
         if (patronCheck != 0.0) {
@@ -105,16 +115,15 @@ public class Checkout {
         }
 
         LocalDate today = LocalDate.now();
-        LocalDate dueDate = today.plusDays(patron.getLoanPeriodDays());
+        LocalDate newDueDate = today.plusDays(patron.getLoanPeriodDays());
         String isbn = book.getIsbn();
+
+        // Capture overdue count BEFORE any changes (tests expect this)
 
         // 4) Renewal: patron already has this book checked out
         if (patron.hasBookCheckedOut(isbn)) {
-            patron.addCheckedOutBook(isbn, dueDate);
-
-            // history is internal (not tested), but keep it consistent
-            history.add(new Transaction(patron, book, today, dueDate));
-
+            patron.addCheckedOutBook(isbn, newDueDate);
+            history.add(new Transaction(patron, book, today, newDueDate));
             return 0.1;
         }
 
@@ -129,108 +138,18 @@ public class Checkout {
         }
 
         // 5.3) Process checkout
-        patron.addCheckedOutBook(isbn, dueDate);
+        patron.addCheckedOutBook(isbn, newDueDate);
         book.checkout();
-        history.add(new Transaction(patron, book, today, dueDate));
+        history.add(new Transaction(patron, book, today, newDueDate));
 
-        // Determine success code (priority: 1.0 then 1.1 else 0.0)
-        int overdue = patron.getOverdueCount();
-        if (overdue >= 1 && overdue <= 2) {
+        // Success codes (priority: overdue warning 1.0, then near-limit 1.1, else 0.0)
+        if (overdueSnapshot >= 1 && overdueSnapshot <= 2) {
             return 1.0;
         }
 
         int afterCount = patron.getCheckoutCount(); // after adding
         int maxLimit = patron.getMaxCheckoutLimit();
         if (maxLimit - afterCount <= 2) {
-            return 1.1;
-        }
-
-        return 0.0;
-    }
-
-        // 2) Book null
-        if (book == null) {
-            return 2.1;
-        }
-
-        // 3) Reference-only check (cannot be checked out)
-        // Assumption based on spec: reference-only means BookType.REFERENCE
-        // If your Book class has a different flag/method, replace this condition.
-        if (book.getType() == Book.BookType.REFERENCE) {
-            return 5.0;
-        }
-
-        LocalDate today = LocalDate.now();
-        LocalDate newDueDate = today.plusDays(patron.getLoanPeriodDays());
-        String isbn = book.getIsbn();
-
-        int overdueBefore = patron.getOverdueCount();
-
-        // 4) Renewal path: patron already has this book checked out
-        // Renewal updates due date only; does NOT reduce available copies; returns 0.1 immediately.
-        if (patron.hasBookCheckedOut(isbn)) {
-            patron.getCheckedOutBooks().put(isbn, newDueDate);
-
-            // Keep internal history consistent (not required for black-box tests)
-            for (Transaction t : history) {
-                if (t.patron.equals(patron) && t.book.equals(book) && t.returnDate == null) {
-                    t.dueDate = newDueDate;
-                    break;
-                }
-            }
-
-            return 0.1;
-        }
-
-        // 5.1) Availability check (only for non-renewal)
-        if (!book.isAvailable()) {
-            return 2.0;
-        }
-
-        // 5.2) Max checkout limit check (only for non-renewal)
-        int maxLimit;
-        switch (patron.getType()) {
-            case FACULTY:
-                maxLimit = 20;
-                break;
-            case STAFF:
-                maxLimit = 15;
-                break;
-            case STUDENT:
-                maxLimit = 10;
-                break;
-            case PUBLIC:
-                maxLimit = 5;
-                break;
-            case CHILD:
-                maxLimit = 3;
-                break;
-            default:
-                // Safe default if other types exist
-                maxLimit = 5;
-                break;
-        }
-
-        int currentCount = patron.getCheckoutCount(); // current checked-out count
-        if (currentCount >= maxLimit) {
-            return 3.2;
-        }
-
-        // 5.3) Process checkout
-        patron.getCheckedOutBooks().put(isbn, newDueDate);
-        book.checkout();
-        history.add(new Transaction(patron, book, today, newDueDate));
-
-        // Determine success code priority:
-        // - 1.0 if patron has 1-2 overdue books (higher priority than 1.1)
-        // - 1.1 if patron is within 2 of max checkout limit AFTER this checkout
-        // - else 0.0
-        if (overdueBefore >= 1 && overdueBefore <= 2) {
-            return 1.0;
-        }
-
-int afterCount = currentCount + 1;
-        if (afterCount >= (maxLimit - 2)) {
             return 1.1;
         }
 
