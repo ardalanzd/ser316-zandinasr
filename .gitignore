@@ -4,3 +4,9 @@ out/
 .idea/
 *.iml
 .DS_Store
+
+# build outputs
+build/
+.gradle/
+**/*.class
+.DS_Store
