@@ -17,7 +17,10 @@ public class BlackBox {
 
     static Stream<Class<? extends Checkout>> checkoutClassProvider() {
         return Stream.of(
-                Checkout.class
+                Checkout0.class,
+                Checkout1.class,
+                Checkout2.class,
+                Checkout3.class
         );
     }
 
