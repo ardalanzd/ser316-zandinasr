@@ -100,7 +100,7 @@ public class Checkout {
         }
 
         // 3) Reference-only
-        if (book.getType() == Book.BookType.REFERENCE) {
+        if (book.isReferenceOnly()) {
             return 5.0;
         }
 
