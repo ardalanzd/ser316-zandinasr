@@ -10,6 +10,8 @@ import java.util.Map;
  * Handles book checkouts, returns, renewals, and fine calculations.
  */
 public class Checkout {
+    private static final double SUCCESS_CODE = 0.0;
+
     public static double MAX_FINE_AMOUNT = 25.0;
 
     private Map<String, Book> bookList; // ISBN -> Book
@@ -76,7 +78,7 @@ public class Checkout {
         if (patron.getFineBalance() >= 10.0) {
             return 4.1;
         }
-        return 0.0; // Eligible
+        return SUCCESS_CODE; // Eligible
     }
 
     /**
@@ -179,7 +181,7 @@ public class Checkout {
             return 1.1;
         }
 
-        return 0.0;
+        return SUCCESS_CODE;
     }
 
     /**
@@ -187,7 +189,7 @@ public class Checkout {
      */
     public double calculateFine(int numOfDays, Book.BookType bookType) {
         if (numOfDays <= 0) {
-            return 0.0;
+            return SUCCESS_CODE;
         }
 
         double fine = 0.0;
