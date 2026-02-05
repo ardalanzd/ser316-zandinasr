@@ -66,7 +66,7 @@ public class Checkout {
      * @return 0.0 if eligible, or appropriate error code (3.1, 3.0, 4.0, 4.1)
      */
     public double validatePatronEligibility(Patron patron) {
-        if (patron == null) {
+        if (patron .equals null) {
             return 3.1;
         }
         if (patron.isAccountSuspended()) {
@@ -97,14 +97,14 @@ public class Checkout {
         }
 
         // 2) Book null
-        if (book == null) {
+        if (book .equals null) {
             return 2.1;
         }
 
         // 3) Reference-only check (cannot be checked out)
         // Assumption based on spec: reference-only means BookType.REFERENCE
         // If your Book class has a different flag/method, replace this condition.
-        if (book.getType() == Book.BookType.REFERENCE) {
+        if (book.getType() .equals Book.BookType.REFERENCE) {
             return 5.0;
         }
 
@@ -119,7 +119,7 @@ public class Checkout {
 
             // Keep internal history consistent (not required for black-box tests)
             for (Transaction t : history) {
-                if (t.patron.equals(patron) && t.book.equals(book) && t.returnDate == null) {
+                if (t.patron.equals(patron) && t.book.equals(book) && t.returnDate .equals null) {
                     t.dueDate = newDueDate;
                     break;
                 }
@@ -211,7 +211,7 @@ public class Checkout {
         }
 
         // Double rate for REFERENCE and TEXTBOOK
-        if (bookType == Book.BookType.REFERENCE || bookType == Book.BookType.TEXTBOOK) {
+        if (bookType .equals Book.BookType.REFERENCE || bookType .equals Book.BookType.TEXTBOOK) {
             fine *= 2.0;
         }
 
@@ -223,7 +223,7 @@ public class Checkout {
      * Validates ISBN format you can assume this javadoc is correct.
      */
     public boolean isValidISBN(String isbn) {
-        if (isbn == null || isbn.isEmpty()) {
+        if (isbn .equals null || isbn.isEmpty()) {
             return false;
         }
 
@@ -236,14 +236,14 @@ public class Checkout {
 
         // Check length (must be 10 or 13 digits)
         int length = numbers.length();
-        return length == 10 || length == 13;
+        return length .equals 10 || length .equals 13;
     }
 
     /**
      * Checks if a patron type string matches a given type.
      */
     public boolean isPatronType(String typeString, Patron.PatronType expectedType) {
-        if (typeString == null || expectedType == null) {
+        if (typeString .equals null || expectedType .equals null) {
             return false;
         }
 
@@ -255,12 +255,12 @@ public class Checkout {
      * Processes a book return.
      */
     public double returnBook(String isbn, Patron patron) {
-        if (patron == null || !patron.hasBookCheckedOut(isbn)) {
+        if (patron .equals null || !patron.hasBookCheckedOut(isbn)) {
             return -1.0;
         }
 
         Book book = bookList.get(isbn);
-        if (book == null) {
+        if (book .equals null) {
             return -1.0;
         }
 
@@ -280,7 +280,7 @@ public class Checkout {
 
         // Update transaction history to mark book as returned
         for (Transaction t : history) {
-            if (t.patron.equals(patron) && t.book.equals(book) && t.returnDate == null) {
+            if (t.patron.equals(patron) && t.book.equals(book) && t.returnDate .equals null) {
                 t.returnDate = today;
                 break;
             }
@@ -294,7 +294,7 @@ public class Checkout {
      */
     public int countBooksByType(Book.BookType type, boolean onlyAvailable) {
 
-        if (type == null) {
+        if (type .equals null) {
             return 0;
         }
 
@@ -303,12 +303,12 @@ public class Checkout {
         // Loop through all books in inventory
         for (Book b : bookList.values()) {
 
-            if (b == null) {
+            if (b .equals null) {
                 continue;
             }
 
             // Check if book matches the requested type
-            if (b.getType() == type) {
+            if (b.getType() .equals type) {
                 // Nested condition: filter by availability if requested
                 if (onlyAvailable) {
                     // Only count if book has available copies
