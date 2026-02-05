@@ -218,3 +218,91 @@ cat <<'EOF' >> blackbox-testing.md
 | TC19 | renewal skips availability | already has ISBN; copies=0 | 0.1 | due updated; copies unchanged |
 | TC20 | priority 1.0 over 1.1 | overdue=1 AND near-limit after checkout | 1.0 | checkout happens; warning should be 1.0 |
 
+
+| TC03 suspended priority | EP | Suspended patron | 3.0 | No state change | ✓ | ✗ | ✓ | ✓ |
+| TC04 overdue>=3 | EP | Patron overdue >=3 | 4.0 | No state change | ✓ | ✓ | ✓ | ✓ |
+| TC05 fines>=10 | EP | Patron fine >=10 | 4.1 | No state change | ✓ | ✓ | ✓ | ✓ |
+| TC06 reference-only | EP | Reference-only book | 5.0 | No checkout occurs | ✗ | ✓ | ✓ | ✓ |
+| TC07 unavailable | EP | Book unavailable | 2.0 | No state change | ✓ | ✓ | ✗ | ✓ |
+| TC08 renewal | EP | Patron renews same book | 0.1 | Due date updated only | ✗ | ✗ | ✗ | ✗ |
+| TC09 normal success | EP | Normal checkout | 0.0 | Copies decrement & patron updated | ✗ | ✗ | ✓ | ✓ |
+| TC10 overdue warning | EP | Patron has overdue books | 1.0 | Checkout still succeeds | ✗ | ✗ | ✗ | ✗ |
+| TC12 near-limit warning | EP | Patron near checkout limit | 1.1 | Checkout succeeds | ✓ | ✗ | ✗ | ✓ |
+| TC13 at max limit | EP | Patron at max limit | 3.2 | No checkout occurs | ✓ | ✗ | ✗ | ✓ |
+| TC14 fine 9.99 eligible | BVA | Fine just below limit | 0.0 | Checkout succeeds | ✓ | ✓ | ✓ | ✓ |
+| TC15 overdue=2 eligible | BVA | Overdue count below limit | 0.0 | Checkout succeeds | ✓ | ✓ | ✓ | ✓ |
+| TC16 copies=1 available | BVA | Last copy available | 0.0 | Checkout succeeds | ✓ | ✓ | ✓ | ✓ |
+| TC17 copies=0 unavailable | EP | No copies available | 2.0 | No state change | ✓ | ✓ | ✗ | ✓ |
+| TC18 fine priority | EP | Fine>=10 & book null | 4.1 | No state change | ✓ | ✗ | ✓ | ✓ |
+| TC19 renewal count | EP | Renewal count check | 0.1 | Count unchanged | ✗ | ✗ | ✗ | ✗ |
+| TC20 overdue priority | EP | Overdue overrides near-limit | 1.0 | Checkout succeeds | ✗ | ✗ | ✗ | ✗ |
+
+
+### Implementation Results
+
+| Implementation | Bugs Found (count) |
+|----------------|---------------------|
+| Checkout0      | 6 |
+| Checkout1      | 9 |
+| Checkout2      | 7 |
+| Checkout3      | 4 |
+
+
+### Bugs Discovered
+
+**Checkout0:**
+- Bug 1: Reference-only books not handled correctly (should return 5.0). — Revealed by: TC06
+- Bug 2: Renewal behavior incorrect (should return 0.1 and not decrement copies). — Revealed by: TC08
+- Bug 3: Normal successful checkout/state updates incorrect (should return 0.0 and update copies + patron map). — Revealed by: TC09
+- Bug 4: Overdue warning not returned correctly (should return 1.0). — Revealed by: TC10
+- Bug 5: Renewal incorrectly affects checkout count (should not increase count). — Revealed by: TC19
+- Bug 6: Priority error: overdue warning should override near-limit warning (should return 1.0). — Revealed by: TC20
+
+**Checkout1:**
+- Bug 1: Suspended priority incorrect (should return 3.0). — Revealed by: TC03
+- Bug 2: Renewal behavior incorrect (should return 0.1 and not decrement copies). — Revealed by: TC08
+- Bug 3: Normal successful checkout/state updates incorrect (should return 0.0 and update state). — Revealed by: TC09
+- Bug 4: Overdue warning not returned correctly (should return 1.0). — Revealed by: TC10
+- Bug 5: Near-limit warning incorrect (should return 1.1). — Revealed by: TC12
+- Bug 6: Max checkout limit incorrect (should return 3.2 at limit). — Revealed by: TC13
+- Bug 7: Priority error: fine>=10 should return 4.1 even when book is null. — Revealed by: TC18
+- Bug 8: Renewal incorrectly affects checkout count (should not increase count). — Revealed by: TC19
+- Bug 9: Priority error: overdue warning should override near-limit warning (should return 1.0). — Revealed by: TC20
+
+**Checkout2:**
+- Bug 1: Unavailable book handling incorrect (should return 2.0). — Revealed by: TC07 / TC17
+- Bug 2: Renewal behavior incorrect (should return 0.1 and not decrement copies). — Revealed by: TC08
+- Bug 3: Overdue warning not returned correctly (should return 1.0). — Revealed by: TC10
+- Bug 4: Near-limit warning incorrect (should return 1.1). — Revealed by: TC12
+- Bug 5: Max checkout limit incorrect (should return 3.2 at limit). — Revealed by: TC13
+- Bug 6: Renewal incorrectly affects checkout count (should not increase count). — Revealed by: TC19
+- Bug 7: Priority error: overdue warning should override near-limit warning (should return 1.0). — Revealed by: TC20
+
+**Checkout3:**
+- Bug 1: Renewal behavior incorrect (should return 0.1 and not decrement copies). — Revealed by: TC08
+- Bug 2: Overdue warning not returned correctly (should return 1.0). — Revealed by: TC10
+- Bug 3: Renewal incorrectly affects checkout count (should not increase count). — Revealed by: TC19
+- Bug 4: Priority error: overdue warning should override near-limit warning (should return 1.0). — Revealed by: TC20
+
+
+### Comparative Analysis
+- Most critical bugs are the ones that block correct business rules or return the wrong priority code (e.g., suspended/fine priority, max-limit handling). These can prevent valid checkouts or allow invalid ones.
+- Checkout3 is the best overall choice because it has the fewest failures (4) and passes core eligibility cases (TC03–TC07, TC09, TC12–TC18).
+- Checkout1 is the worst overall (9 failures) due to multiple priority/order issues (TC03, TC18, TC20) plus incorrect warning/limit behavior (TC12, TC13) and renewal/count bugs (TC08, TC19).
+- If forced to pick one implementation, I would choose Checkout3 because it is closest to the expected behavior and has fewer severe failures compared to the others.
+
+
+## Part 5: Reflection
+
+**Which testing technique was most effective for finding bugs?**  
+Black-box testing was most effective early because it quickly exposed incorrect return codes and priority ordering across implementations without needing to inspect code (e.g., TC03, TC18, TC20). White-box testing was most helpful for improving coverage and making sure internal branches (like null checks and availability filtering) were exercised.
+
+**What was the most challenging aspect of this assignment?**  
+Designing test cases that verify observable state changes (copies, patron map, renewal behavior) rather than only checking return values, and making sure tests cover edge cases like priority ordering.
+
+**How did you decide on your EP and BVA?**  
+I used EP to cover distinct behavior categories (unavailable vs available, suspended vs eligible, renewal vs normal checkout), and BVA around numeric thresholds like fine amount (9.99 vs 10.00), overdue count (2 vs 3), and inventory copies (1 vs 0).
+
+**Describe one test where checking only the return value would NOT have been sufficient to detect a bug.**  
+TC09 (normal success) requires checking state changes: the book’s available copies must decrement and the patron’s checkedOutBooks map must be updated. A method could return 0.0 but fail to update copies or the patron record, which would be missed if only the return value was asserted.
+
