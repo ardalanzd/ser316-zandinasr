@@ -1,6 +1,6 @@
 # Black Box Testing Report - Assignment 2
 
-**Student Name:** Ardalan Zandina
+**Student Name:** Ardalan Zandi
 **ASU ID:** azandina
 **Date:** June 2026
 
